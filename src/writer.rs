@@ -25,13 +25,13 @@ impl<W: Write> Write for HexWriter<W> {
 
     for byte in buf {
       if bytes_this_line == 0 || bytes_this_line + 3 > self.width {
-        let c = self.writer.write(format!("\n{:#X}: ", self.current_line * self.width).as_bytes())?;
+        let c = self.writer.write(format!("\n0x{:0>8X}: ", self.current_line * self.width).as_bytes())?;
         self.bytes_written += c;
         bytes_this_line = c - 1;
         self.current_line += 1;
       }
 
-      let c = self.writer.write(format!("{:X} ", byte).as_bytes())?;
+      let c = self.writer.write(format!("{:0>2X} ", byte).as_bytes())?;
       self.bytes_written += c;
       bytes_this_line += c;
 
