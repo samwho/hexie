@@ -31,6 +31,10 @@ impl<W: Write> HexWriter<W> {
     self.start_position + (self.current_line * self.width)
   }
 
+  fn would_overflow_current_line(&self, s: usize) -> bool {
+    self.current_line_position + s > self.width
+  }
+
   fn emit_new_line(&mut self) -> Result<usize> {
     if self.current_line != 0 {
       self.writer.write(&[10])?; // newline
@@ -44,7 +48,7 @@ impl<W: Write> HexWriter<W> {
   fn emit_byte(&mut self, byte: u8) -> Result<usize> {
     let s = format!(" {:0>2X}", byte);
     let bytes = s.as_bytes();
-    if self.current_line_position == 0 || (self.current_line_position + bytes.len()) > self.width {
+    if self.current_line_position == 0 || self.would_overflow_current_line(bytes.len()) {
       self.emit_new_line()?;
     }
     let c = self.writer.write(bytes)?;
