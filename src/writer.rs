@@ -10,6 +10,7 @@ pub struct HexWriter<W: Write, C: Colorer> {
   current_line_position: usize,
   colorer: Box<C>,
   previous_byte: Option<u8>,
+  line: Vec<u8>,
 }
 
 pub struct HexWriterBuilder<W: Write, C: Colorer> {
@@ -57,6 +58,7 @@ impl<W: Write, C: Colorer> HexWriterBuilder<W, C> {
       current_line_position: 0,
       colorer: self.colorer,
       previous_byte: None,
+      line: Vec::with_capacity(self.width / 4),
     }
   }
 }
@@ -73,13 +75,28 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
   }
 
   fn would_overflow_current_line(&self, s: usize) -> bool {
-    self.current_line_position + s > self.width
+    self.current_line_position + s > (self.width as f64 / 4f64).ceil() as usize * 3
+  }
+
+  fn emit_right_hand_side(&mut self) -> Result<()> {
+    let grey_dot = ".".white().dimmed().to_string();
+    self.writer.write(" │ ".as_bytes())?;
+    for byte in &self.line {
+      match byte {
+        32...126 => self.writer.write(&[*byte])?,
+        _ => self.writer.write(grey_dot.as_bytes())?
+      };
+    }
+    self.line.clear();
+    Ok(())
   }
 
   fn emit_new_line(&mut self) -> Result<()> {
     if self.current_line != 0 {
+      self.emit_right_hand_side()?;
       self.writer.write(&[10])?; // newline
     }
+
     let s = format!("0x{:0>8X}", self.current_line_start_index()).white().dimmed().to_string();
     self.writer.write(s.as_bytes())?;
     self.writer.write(" │".as_bytes())?;
@@ -95,6 +112,7 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
       self.emit_new_line()?;
     }
     let c = self.writer.write(bytes)?;
+    self.line.push(byte);
     self.current_line_position += 3;
     self.previous_byte = Some(byte);
     Ok(c)
