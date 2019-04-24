@@ -1,8 +1,10 @@
 extern crate term_size;
 #[macro_use]
 extern crate clap;
+extern crate colored;
 
 mod writer;
+mod colorer;
 
 use std::io::{Result, BufReader, BufRead, copy, stdin};
 use std::fs::File;
