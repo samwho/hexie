@@ -1,10 +1,12 @@
 extern crate term_size;
 #[macro_use]
 extern crate clap;
+#[macro_use]
+extern crate typed_builder;
 
 mod writer;
 
-use std::io::{stdout, Result, Write, BufReader, copy};
+use std::io::{Result, BufReader, copy};
 use std::fs::File;
 
 fn main() -> Result<()> {
@@ -17,8 +19,7 @@ fn main() -> Result<()> {
 
     let path = matches.value_of("INPUT").unwrap();
     let mut reader = BufReader::new(File::open(path)?);
-    let width = term_size::dimensions().unwrap().0;
-    let mut writer = writer::HexWriter::wrap(stdout(), width);
+    let mut writer = writer::HexWriter::default();
 
     if let Err(e) = copy(&mut reader, &mut writer) {
         return Err(e);
