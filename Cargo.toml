@@ -1,0 +1,8 @@
+[package]
+name = "hexie"
+version = "0.1.0"
+authors = ["Sam <samwho@lbak.co.uk>"]
+edition = "2018"
+
+[dependencies]
+term_size = "0.3.1"
