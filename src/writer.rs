@@ -1,16 +1,11 @@
 use std::io::{stdout, Write, BufWriter, Result};
 
-#[derive(TypedBuilder)]
 pub struct HexWriter<W: Write> {
   writer: BufWriter<W>,
   width: usize,
-
-  #[builder(default=0)]
-  bytes_written: usize,
-  #[builder(default=0)]
   current_line: usize,
-  #[builder(default=0)]
   start_position: usize,
+  current_line_position: usize,
 }
 
 impl Default for HexWriter<std::io::Stdout> {
@@ -26,9 +21,9 @@ impl<W: Write> HexWriter<W> {
     HexWriter {
       writer: BufWriter::new(writer),
       width: width,
-      bytes_written: 0,
       current_line: 0,
       start_position: 0,
+      current_line_position: 0,
     }
   }
 
@@ -37,33 +32,33 @@ impl<W: Write> HexWriter<W> {
   }
 
   fn emit_new_line(&mut self) -> Result<usize> {
-    let c = self.writer.write(format!("\n0x{:0>8X}: ", self.current_line_start_index()).as_bytes())?;
-    self.bytes_written += c;
+    if self.current_line != 0 {
+      self.writer.write(&[10])?; // newline
+    }
+    let c = self.writer.write(format!("0x{:0>8X}:", self.current_line_start_index()).as_bytes())?;
     self.current_line += 1;
-    Ok(c)
+    self.current_line_position = c;
+    Ok(c - 1)
   }
 
   fn emit_byte(&mut self, byte: u8) -> Result<usize> {
-    let c = self.writer.write(format!("{:0>2X} ", byte).as_bytes())?;
-    self.bytes_written += c;
+    let s = format!(" {:0>2X}", byte);
+    let bytes = s.as_bytes();
+    if self.current_line_position == 0 || (self.current_line_position + bytes.len()) > self.width {
+      self.emit_new_line()?;
+    }
+    let c = self.writer.write(bytes)?;
+    self.current_line_position += c;
     Ok(c)
   }
 }
 
 impl<W: Write> Write for HexWriter<W> {
   fn write(&mut self, buf: &[u8]) -> Result<usize> {
-    let mut return_bytes = 0;
-    let mut bytes_this_line = 0;
-
     for byte in buf {
-      if bytes_this_line == 0 || bytes_this_line + 3 > self.width {
-        bytes_this_line = self.emit_new_line()? - 1;
-      }
-      bytes_this_line += self.emit_byte(*byte)?;
-      return_bytes += 1;
+      self.emit_byte(*byte)?;
     }
-
-    Ok(return_bytes)
+    Ok(buf.len())
   }
 
   fn flush(&mut self) -> Result<()> {

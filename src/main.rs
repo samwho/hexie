@@ -1,8 +1,6 @@
 extern crate term_size;
 #[macro_use]
 extern crate clap;
-#[macro_use]
-extern crate typed_builder;
 
 mod writer;
 
