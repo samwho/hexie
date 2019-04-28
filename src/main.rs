@@ -3,13 +3,16 @@ extern crate clap;
 extern crate atty;
 extern crate env_logger;
 extern crate hex;
+extern crate pager;
 extern crate stats;
+extern crate term_size;
 extern crate termion;
 
 mod colorer;
 mod range_reader;
 mod writer;
 
+use pager::Pager;
 use range_reader::RangeReader;
 use std::fmt;
 use std::fs::File;
@@ -69,8 +72,13 @@ fn main() -> Result<()> {
       (@arg END: -e --end +takes_value "Byte to read to, decimal or hex")
       (@arg NUM: -n --num +takes_value "Number of bytes to read")
       (@arg COLORER: -c --color +takes_value "Type of coloring, one of: none, absolute, entropy")
+      (@arg NOPAGER: --nopager "Disables the pager")
   )
   .get_matches();
+
+  if !matches.is_present("NOPAGER") {
+    Pager::with_pager("less -r").setup();
+  }
 
   let mut start = match matches.value_of("START") {
     Some(f) => Some(parse_cli_number(f)?),
@@ -113,19 +121,17 @@ fn main() -> Result<()> {
 
   let mut builder = HexWriterBuilder::default().start_position(start.unwrap_or(0));
 
-  if atty::is(atty::Stream::Stdout) {
-    builder = match matches.value_of("COLORER") {
-      Some("none") => builder.colorer(colorer::Noop::default()),
-      Some("entropy") => builder.colorer(colorer::Entropy::default()),
-      None | Some("absolute") => builder.colorer(colorer::Absolute::default()),
-      Some(other) => {
-        return Err(Error::InvalidArguments(format!(
-          "Unknown colorer {}",
-          other
-        )))
-      }
-    };
-  }
+  builder = match matches.value_of("COLORER") {
+    Some("none") => builder.colorer(colorer::Noop::default()),
+    Some("entropy") => builder.colorer(colorer::Entropy::default()),
+    None | Some("absolute") => builder.colorer(colorer::Absolute::default()),
+    Some(other) => {
+      return Err(Error::InvalidArguments(format!(
+        "Unknown colorer {}",
+        other
+      )))
+    }
+  };
 
   let mut writer = builder.build();
 
