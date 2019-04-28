@@ -2,32 +2,29 @@ use std::io::{Read, Result, Seek, SeekFrom};
 
 const BUF_SIZE: usize = 4096;
 
-pub struct RangeReader<R> {
-  inner: R,
+pub struct RangeReader {
+  inner: Box<Read>,
   start: Option<usize>,
   end: Option<usize>,
   pos: usize,
 }
 
-impl<R> RangeReader<R>
-where
-  R: Read,
-{
-  pub fn from<T: Seek + Read>(inner: T, start: Option<usize>, end: Option<usize>) -> Result<Self> {
+impl RangeReader {
+  pub fn from(inner: impl Seek + Read, start: Option<usize>, end: Option<usize>) -> Result<Self> {
     let s = start.unwrap_or(0);
     inner.seek(SeekFrom::Start(s as u64))?;
 
     Ok(RangeReader {
-      inner,
+      inner: Box::new(inner),
       start,
       end,
       pos: s,
     })
   }
 
-  pub fn new(inner: R, start: Option<usize>, end: Option<usize>) -> Self {
+  pub fn new(inner: impl Read, start: Option<usize>, end: Option<usize>) -> Self {
     RangeReader {
-      inner,
+      inner: Box::new(inner),
       start,
       end,
       pos: 0,
@@ -53,7 +50,7 @@ where
   }
 }
 
-impl<R: Read> Read for RangeReader<R> {
+impl Read for RangeReader {
   fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
     if self.end != None && self.pos >= self.end.unwrap() {
       return Ok(0);
