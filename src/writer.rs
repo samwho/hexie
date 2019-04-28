@@ -27,7 +27,7 @@ impl Default for HexWriterBuilder<Stdout, AbsoluteColorer> {
         HexWriterBuilder {
             writer: Box::new(stdout()),
             colorer: Box::new(AbsoluteColorer::new()),
-            width: width,
+            width,
             start_position: 0,
         }
     }
@@ -80,11 +80,11 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
 
     fn emit_right_hand_side(&mut self) -> Result<()> {
         let grey_dot = ".".white().dimmed().to_string();
-        self.writer.write(" │ ".as_bytes())?;
+        self.writer.write_all(" │ ".as_bytes())?;
         for byte in &self.line {
             match byte {
-                32...126 => self.writer.write(&[*byte])?,
-                _ => self.writer.write(grey_dot.as_bytes())?,
+                32...126 => self.writer.write_all(&[*byte])?,
+                _ => self.writer.write_all(grey_dot.as_bytes())?,
             };
         }
         self.line.clear();
@@ -94,15 +94,15 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
     fn emit_new_line(&mut self) -> Result<()> {
         if self.current_line != 0 {
             self.emit_right_hand_side()?;
-            self.writer.write(&[10])?; // newline
+            self.writer.write_all(&[10])?; // newline
         }
 
         let s = format!("0x{:0>8X}", self.current_line_start_index())
             .white()
             .dimmed()
             .to_string();
-        self.writer.write(s.as_bytes())?;
-        self.writer.write(" │".as_bytes())?;
+        self.writer.write_all(s.as_bytes())?;
+        self.writer.write_all(" │".as_bytes())?;
         self.current_line += 1;
         self.current_line_position = 13;
         Ok(())
@@ -116,11 +116,11 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
         if self.current_line_position == 0 || self.would_overflow_current_line(3) {
             self.emit_new_line()?;
         }
-        let c = self.writer.write(bytes)?;
+        self.writer.write_all(bytes)?;
         self.line.push(byte);
         self.current_line_position += 3;
         self.previous_byte = Some(byte);
-        Ok(c)
+        Ok(3)
     }
 }
 

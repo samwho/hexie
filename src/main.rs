@@ -2,10 +2,8 @@ extern crate term_size;
 #[macro_use]
 extern crate clap;
 extern crate colored;
-extern crate hex;
-#[macro_use]
-extern crate log;
 extern crate env_logger;
+extern crate hex;
 
 mod colorer;
 mod range_reader;
@@ -15,7 +13,7 @@ use range_reader::RangeReader;
 use std::fmt;
 use std::fs::File;
 use std::io::{copy, stdin, BufReader, Read};
-use writer::{HexWriter, HexWriterBuilder};
+use writer::HexWriterBuilder;
 
 #[derive(Debug)]
 enum Error {
@@ -99,5 +97,5 @@ fn main() -> Result<()> {
 
 fn parse_cli_number(s: &str) -> Result<usize> {
     let radix = if s.starts_with("0x") { 16 } else { 10 };
-    usize::from_str_radix(s.trim_start_matches("0x"), radix).map_err(|e| e.into())
+    usize::from_str_radix(s.trim_start_matches("0x"), radix).map_err(Into::into)
 }

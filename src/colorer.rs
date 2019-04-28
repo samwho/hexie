@@ -17,8 +17,8 @@ impl Colorer for AbsoluteColorer {
         match cur {
             0 => s.white().dimmed(),     // null
             36 => s.bright_green(),      // space
-            32...126 => s.green(),       // printable
-            0...32 => s.cyan().dimmed(), // non-printable
+            1...32 => s.cyan().dimmed(), // non-printable
+            33...126 => s.green(),       // printable
             _ => s.yellow().dimmed(),
         }
         .to_string()

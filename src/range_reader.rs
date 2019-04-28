@@ -1,4 +1,4 @@
-use std::io::{Error, ErrorKind, Read, Result};
+use std::io::{Read, Result};
 
 const BUF_SIZE: usize = 4096;
 
@@ -61,6 +61,7 @@ impl<R: Read> Read for RangeReader<R> {
                 return Ok(r);
             }
         }
-        return Ok(n);
+
+        Ok(n)
     }
 }
