@@ -128,6 +128,18 @@ impl<W: Write, C: Colorer> Write for HexWriter<W, C> {
   }
 
   fn flush(&mut self) -> Result<()> {
+    if self.line.len() > 0 {
+      loop {
+        if self.would_overflow_current_line(3) {
+          self.emit_right_hand_side()?;
+          self.writer.write_all(&[10])?; // newline
+          break;
+        }
+        self.writer.write_all(&[32, 32, 32])?; // three spaces
+        self.current_line_position += 3;
+      }
+    }
+
     self.writer.flush()
   }
 }

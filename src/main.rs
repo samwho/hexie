@@ -12,7 +12,7 @@ mod writer;
 use range_reader::RangeReader;
 use std::fmt;
 use std::fs::File;
-use std::io::{copy, stdin, BufReader, Read};
+use std::io::{copy, stdin, BufReader, Read, Write};
 use writer::HexWriterBuilder;
 
 #[derive(Debug)]
@@ -87,7 +87,7 @@ fn main() -> Result<()> {
     .build();
 
   copy(&mut reader, &mut writer)?;
-  Ok(())
+  writer.flush().map_err(Into::into)
 }
 
 fn parse_cli_number(s: &str) -> Result<usize> {
