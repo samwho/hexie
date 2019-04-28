@@ -1,6 +1,7 @@
 extern crate term_size;
 #[macro_use]
 extern crate clap;
+extern crate atty;
 extern crate env_logger;
 extern crate hex;
 extern crate termion;
@@ -112,17 +113,19 @@ fn main() -> Result<()> {
 
   let mut builder = HexWriterBuilder::default().start_position(start.unwrap_or(0));
 
-  builder = match matches.value_of("COLORER") {
-    Some("none") => builder.colorer(colorer::Noop::default()),
-    Some("entropy") => builder.colorer(colorer::Entropy::default()),
-    None | Some("absolute") => builder.colorer(colorer::Absolute::default()),
-    Some(other) => {
-      return Err(Error::InvalidArguments(format!(
-        "Unknown colorer {}",
-        other
-      )))
-    }
-  };
+  if atty::is(atty::Stream::Stdout) {
+    builder = match matches.value_of("COLORER") {
+      Some("none") => builder.colorer(colorer::Noop::default()),
+      Some("entropy") => builder.colorer(colorer::Entropy::default()),
+      None | Some("absolute") => builder.colorer(colorer::Absolute::default()),
+      Some(other) => {
+        return Err(Error::InvalidArguments(format!(
+          "Unknown colorer {}",
+          other
+        )))
+      }
+    };
+  }
 
   let mut writer = builder.build();
 

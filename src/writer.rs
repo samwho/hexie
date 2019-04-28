@@ -1,4 +1,4 @@
-use super::colorer::{Absolute, Colorer};
+use super::colorer;
 use std::io::{stdout, Result, Write};
 
 pub struct HexWriter {
@@ -7,7 +7,7 @@ pub struct HexWriter {
   current_line: usize,
   start_position: usize,
   current_line_position: usize,
-  colorer: Box<dyn Colorer>,
+  colorer: Box<colorer::Colorer>,
   previous_byte: Option<u8>,
   line: Vec<u8>,
   bytes_written: usize,
@@ -15,7 +15,7 @@ pub struct HexWriter {
 
 pub struct HexWriterBuilder {
   writer: Box<Write>,
-  colorer: Box<dyn Colorer>,
+  colorer: Box<colorer::Colorer>,
   width: usize,
   start_position: usize,
 }
@@ -26,7 +26,7 @@ impl Default for HexWriterBuilder {
 
     HexWriterBuilder {
       writer: Box::new(stdout()),
-      colorer: Box::new(Absolute::default()),
+      colorer: Box::new(colorer::Noop::default()),
       width,
       start_position: 0,
     }
@@ -39,7 +39,7 @@ impl HexWriterBuilder {
     self
   }
 
-  pub fn colorer(mut self, colorer: impl Colorer + 'static) -> Self {
+  pub fn colorer(mut self, colorer: impl colorer::Colorer + 'static) -> Self {
     self.colorer = Box::new(colorer);
     self
   }
