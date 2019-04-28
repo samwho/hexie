@@ -1,45 +1,45 @@
-use super::colorer::{AbsoluteColorer, Colorer};
-use std::io::{stdout, Result, Stdout, Write};
+use super::colorer::{Absolute, Colorer};
+use std::io::{stdout, Result, Write};
 
-pub struct HexWriter<W: Write, C: Colorer> {
-  writer: Box<W>,
+pub struct HexWriter {
+  writer: Box<Write>,
   width: usize,
   current_line: usize,
   start_position: usize,
   current_line_position: usize,
-  colorer: Box<C>,
+  colorer: Box<dyn Colorer>,
   previous_byte: Option<u8>,
   line: Vec<u8>,
   bytes_written: usize,
 }
 
-pub struct HexWriterBuilder<W: Write, C: Colorer> {
-  writer: Box<W>,
-  colorer: Box<C>,
+pub struct HexWriterBuilder {
+  writer: Box<Write>,
+  colorer: Box<dyn Colorer>,
   width: usize,
   start_position: usize,
 }
 
-impl Default for HexWriterBuilder<Stdout, AbsoluteColorer> {
-  fn default() -> HexWriterBuilder<Stdout, AbsoluteColorer> {
+impl Default for HexWriterBuilder {
+  fn default() -> HexWriterBuilder {
     let width = term_size::dimensions().unwrap_or((80, 0)).0;
 
     HexWriterBuilder {
       writer: Box::new(stdout()),
-      colorer: Box::new(AbsoluteColorer::new()),
+      colorer: Box::new(Absolute::default()),
       width,
       start_position: 0,
     }
   }
 }
 
-impl<W: Write, C: Colorer> HexWriterBuilder<W, C> {
-  pub fn writer(mut self, writer: W) -> Self {
+impl HexWriterBuilder {
+  pub fn writer(mut self, writer: impl Write + 'static) -> Self {
     self.writer = Box::new(writer);
     self
   }
 
-  pub fn colorer(mut self, colorer: C) -> Self {
+  pub fn colorer(mut self, colorer: impl Colorer + 'static) -> Self {
     self.colorer = Box::new(colorer);
     self
   }
@@ -49,7 +49,7 @@ impl<W: Write, C: Colorer> HexWriterBuilder<W, C> {
     self
   }
 
-  pub fn build(self) -> HexWriter<W, C> {
+  pub fn build(self) -> HexWriter {
     HexWriter {
       writer: self.writer,
       width: self.width,
@@ -64,13 +64,13 @@ impl<W: Write, C: Colorer> HexWriterBuilder<W, C> {
   }
 }
 
-impl Default for HexWriter<Stdout, AbsoluteColorer> {
+impl Default for HexWriter {
   fn default() -> Self {
     HexWriterBuilder::default().build()
   }
 }
 
-impl<W: Write, C: Colorer> HexWriter<W, C> {
+impl HexWriter {
   fn would_overflow_current_line(&self, s: usize) -> bool {
     self.current_line_position + s > (self.width as f64 / 4f64).ceil() as usize * 3
   }
@@ -119,7 +119,7 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
   }
 }
 
-impl<W: Write, C: Colorer> Write for HexWriter<W, C> {
+impl Write for HexWriter {
   fn write(&mut self, buf: &[u8]) -> Result<usize> {
     for byte in buf {
       self.emit_byte(*byte)?;

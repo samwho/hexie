@@ -67,6 +67,7 @@ fn main() -> Result<()> {
       (@arg START: -s --start +takes_value "Byte to start reading from, decimal or hex")
       (@arg END: -e --end +takes_value "Byte to read to, decimal or hex")
       (@arg NUM: -n --num +takes_value "Number of bytes to read")
+      (@arg COLORER: -c --color +takes_value "Type of coloring, one of: none, absolute, entropy")
   )
   .get_matches();
 
@@ -85,17 +86,22 @@ fn main() -> Result<()> {
     None => None,
   };
 
-  if start != None && end != None && num != None {
+  if start.is_some() && end.is_some() && num.is_some() {
     return Err(Error::InvalidArguments(String::from(
       "Must only specify two of: --start, --end, --num",
     )));
   }
 
-  if start == None && end != None && num != None {
+  if start.is_none() && end.is_some() && num.is_some() {
     start = Some(end.unwrap() - num.unwrap());
   }
 
-  if end == None && start != None && num != None {
+  if end.is_none() && start.is_some() && num.is_some() {
+    end = Some(start.unwrap() + num.unwrap());
+  }
+
+  if end.is_none() && start.is_none() && num.is_some() {
+    start = Some(0);
     end = Some(start.unwrap() + num.unwrap());
   }
 
@@ -104,9 +110,21 @@ fn main() -> Result<()> {
     Some(path) => RangeReader::from_seekable(File::open(path)?, start, end)?,
   };
 
-  let mut writer = HexWriterBuilder::default()
-    .start_position(start.unwrap_or(0))
-    .build();
+  let mut builder = HexWriterBuilder::default().start_position(start.unwrap_or(0));
+
+  builder = match matches.value_of("COLORER") {
+    Some("none") => builder.colorer(colorer::Noop::default()),
+    Some("entropy") => builder.colorer(colorer::Entropy::default()),
+    None | Some("absolute") => builder.colorer(colorer::Absolute::default()),
+    Some(other) => {
+      return Err(Error::InvalidArguments(format!(
+        "Unknown colorer {}",
+        other
+      )))
+    }
+  };
+
+  let mut writer = builder.build();
 
   copy(&mut reader, &mut writer)?;
   writer.flush().map_err(Into::into)
