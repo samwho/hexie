@@ -3,7 +3,7 @@ use std::io::{stdout, Result, Write};
 
 pub struct HexWriter {
   writer: Box<Write>,
-  width: usize,
+  width: u16,
   current_line: usize,
   start_position: usize,
   current_line_position: usize,
@@ -16,13 +16,13 @@ pub struct HexWriter {
 pub struct HexWriterBuilder {
   writer: Box<Write>,
   colorer: Box<colorer::Colorer>,
-  width: usize,
+  width: u16,
   start_position: usize,
 }
 
 impl Default for HexWriterBuilder {
   fn default() -> HexWriterBuilder {
-    let width = term_size::dimensions().unwrap_or((80, 0)).0;
+    let width = termion::terminal_size().unwrap_or((80, 0)).0;
 
     HexWriterBuilder {
       writer: Box::new(stdout()),
@@ -34,11 +34,6 @@ impl Default for HexWriterBuilder {
 }
 
 impl HexWriterBuilder {
-  pub fn writer(mut self, writer: impl Write + 'static) -> Self {
-    self.writer = Box::new(writer);
-    self
-  }
-
   pub fn colorer(mut self, colorer: impl colorer::Colorer + 'static) -> Self {
     self.colorer = Box::new(colorer);
     self
@@ -58,7 +53,7 @@ impl HexWriterBuilder {
       current_line_position: 0,
       colorer: self.colorer,
       previous_byte: None,
-      line: Vec::with_capacity(self.width / 4),
+      line: Vec::with_capacity(usize::from(self.width) / 4),
       bytes_written: 0,
     }
   }

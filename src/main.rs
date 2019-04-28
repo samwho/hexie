@@ -1,4 +1,3 @@
-extern crate term_size;
 #[macro_use]
 extern crate clap;
 extern crate atty;

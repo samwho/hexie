@@ -5,7 +5,6 @@ authors = ["Sam <samwho@lbak.co.uk>"]
 edition = "2018"
 
 [dependencies]
-term_size = "0.3.1"
 clap = "2.33.0"
 hex = "0.3.2"
 log = "0.4.6"
