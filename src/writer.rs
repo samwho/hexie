@@ -1,4 +1,5 @@
 use super::colorer;
+use std::collections::VecDeque;
 use std::io::{stdout, Result, Write};
 
 pub struct HexWriter {
@@ -8,7 +9,7 @@ pub struct HexWriter {
   start_position: usize,
   current_line_position: usize,
   colorer: Box<colorer::Colorer>,
-  previous_byte: Option<u8>,
+  previous_bytes: VecDeque<u8>,
   line: Vec<u8>,
   bytes_written: usize,
 }
@@ -52,7 +53,7 @@ impl HexWriterBuilder {
       start_position: self.start_position,
       current_line_position: 0,
       colorer: self.colorer,
-      previous_byte: None,
+      previous_bytes: VecDeque::with_capacity(8),
       line: Vec::with_capacity(usize::from(self.width) / 4),
       bytes_written: 0,
     }
@@ -103,12 +104,15 @@ impl HexWriter {
     self.colorer.color(
       &mut self.writer,
       &format!(" {:0>2X}", byte),
-      self.previous_byte,
+      &self.previous_bytes,
       byte,
     )?;
     self.line.push(byte);
     self.current_line_position += 3;
-    self.previous_byte = Some(byte);
+    if self.previous_bytes.len() + 1 == self.previous_bytes.capacity() {
+      self.previous_bytes.pop_back();
+    }
+    self.previous_bytes.push_back(byte);
     self.bytes_written += 1;
     Ok(3)
   }

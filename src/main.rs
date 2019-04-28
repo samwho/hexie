@@ -3,6 +3,7 @@ extern crate clap;
 extern crate atty;
 extern crate env_logger;
 extern crate hex;
+extern crate stats;
 extern crate termion;
 
 mod colorer;

@@ -1,8 +1,10 @@
+use stats::stddev;
+use std::collections::VecDeque;
 use std::io::{Result, Write};
 use termion::color;
 
 pub trait Colorer {
-  fn color(&self, writer: &mut Write, s: &str, prev: Option<u8>, cur: u8) -> Result<()>;
+  fn color(&self, writer: &mut Write, s: &str, prev: &VecDeque<u8>, cur: u8) -> Result<()>;
 }
 
 pub struct Absolute {
@@ -28,7 +30,7 @@ impl Default for Absolute {
 }
 
 impl Colorer for Absolute {
-  fn color(&self, writer: &mut Write, s: &str, _prev: Option<u8>, cur: u8) -> Result<()> {
+  fn color(&self, writer: &mut Write, s: &str, _prev: &VecDeque<u8>, cur: u8) -> Result<()> {
     let c = match cur {
       0 => &self.color_null,
       36 => &self.color_space,
@@ -60,14 +62,16 @@ impl Default for Entropy {
 }
 
 impl Colorer for Entropy {
-  fn color(&self, writer: &mut Write, s: &str, prev: Option<u8>, cur: u8) -> Result<()> {
-    let c = match prev {
-      Some(prev) => match (i16::from(cur) - i16::from(prev)).abs() as u8 {
-        0...85 => &self.color_low,
-        86...170 => &self.color_mid,
-        171...255 => &self.color_high,
-      },
-      None => &self.color_high,
+  fn color(&self, writer: &mut Write, s: &str, prev: &VecDeque<u8>, cur: u8) -> Result<()> {
+    let c = if prev.is_empty() {
+      &self.color_high
+    } else {
+      let dev = stddev(prev.iter().map(|p| *p));
+      match dev as u8 {
+        0...32 => &self.color_low,
+        33...50 => &self.color_mid,
+        _ => &self.color_high,
+      }
     };
 
     write!(writer, "{}{}{}", c, s, self.color_reset)
@@ -83,7 +87,7 @@ impl Default for Noop {
 }
 
 impl Colorer for Noop {
-  fn color(&self, writer: &mut Write, s: &str, _prev: Option<u8>, _cur: u8) -> Result<()> {
+  fn color(&self, writer: &mut Write, s: &str, _prev: &VecDeque<u8>, _cur: u8) -> Result<()> {
     write!(writer, "{}", s)
   }
 }
