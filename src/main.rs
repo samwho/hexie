@@ -19,6 +19,7 @@ use writer::HexWriterBuilder;
 enum Error {
   Io(std::io::Error),
   ParseInt(std::num::ParseIntError),
+  InvalidArguments(String),
 }
 
 impl fmt::Display for Error {
@@ -26,6 +27,7 @@ impl fmt::Display for Error {
     match *self {
       Error::Io(ref err) => err.fmt(f),
       Error::ParseInt(ref err) => err.fmt(f),
+      Error::InvalidArguments(ref s) => f.write_str(s),
     }
   }
 }
@@ -35,6 +37,7 @@ impl std::error::Error for Error {
     match *self {
       Error::Io(ref err) => err.description(),
       Error::ParseInt(ref err) => err.description(),
+      Error::InvalidArguments(ref s) => s,
     }
   }
 }
@@ -61,29 +64,49 @@ fn main() -> Result<()> {
       (author: "Sam Rose <hello@samwho.dev>")
       (about: "Yet another hex viewer")
       (@arg INPUT: "File to use as input")
-      (@arg FROM: -f --from +takes_value "Byte to start reading from, decimal or hex")
-      (@arg TO: -t --to +takes_value "Byte to read to, decimal or hex")
+      (@arg START: -s --start +takes_value "Byte to start reading from, decimal or hex")
+      (@arg END: -e --end +takes_value "Byte to read to, decimal or hex")
+      (@arg NUM: -n --num +takes_value "Number of bytes to read")
   )
   .get_matches();
 
-  let from = match matches.value_of("FROM") {
+  let mut start = match matches.value_of("START") {
     Some(f) => Some(parse_cli_number(f)?),
     None => None,
   };
 
-  let to = match matches.value_of("TO") {
+  let mut end = match matches.value_of("END") {
     Some(t) => Some(parse_cli_number(t)?),
     None => None,
   };
+
+  let num = match matches.value_of("NUM") {
+    Some(n) => Some(parse_cli_number(n)?),
+    None => None,
+  };
+
+  if start != None && end != None && num != None {
+    return Err(Error::InvalidArguments(String::from(
+      "Must only specify two of: --start, --end, --num",
+    )));
+  }
+
+  if start == None && end != None && num != None {
+    start = Some(end.unwrap() - num.unwrap());
+  }
+
+  if end == None && start != None && num != None {
+    end = Some(start.unwrap() + num.unwrap());
+  }
 
   let read: Box<Read> = match matches.value_of("INPUT") {
     None => Box::new(stdin()),
     Some(path) => Box::new(File::open(path)?),
   };
 
-  let mut reader = RangeReader::new(BufReader::new(read), from, to);
+  let mut reader = RangeReader::new(BufReader::new(read), start, end);
   let mut writer = HexWriterBuilder::default()
-    .start_position(from.unwrap_or(0))
+    .start_position(start.unwrap_or(0))
     .build();
 
   copy(&mut reader, &mut writer)?;

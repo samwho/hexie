@@ -1,15 +1,30 @@
-use std::io::{Read, Result};
+use std::io::{Read, Result, Seek, SeekFrom};
 
 const BUF_SIZE: usize = 4096;
 
-pub struct RangeReader<R: Read> {
+pub struct RangeReader<R> {
   inner: R,
   start: Option<usize>,
   end: Option<usize>,
   pos: usize,
 }
 
-impl<R: Read> RangeReader<R> {
+impl<R> RangeReader<R>
+where
+  R: Read,
+{
+  pub fn from<T: Seek + Read>(inner: T, start: Option<usize>, end: Option<usize>) -> Result<Self> {
+    let s = start.unwrap_or(0);
+    inner.seek(SeekFrom::Start(s as u64))?;
+
+    Ok(RangeReader {
+      inner,
+      start,
+      end,
+      pos: s,
+    })
+  }
+
   pub fn new(inner: R, start: Option<usize>, end: Option<usize>) -> Self {
     RangeReader {
       inner,
