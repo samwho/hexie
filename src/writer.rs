@@ -1,5 +1,4 @@
 use super::colorer::{AbsoluteColorer, Colorer};
-use colored::*;
 use std::io::{stdout, Result, Stdout, Write};
 
 pub struct HexWriter<W: Write, C: Colorer> {
@@ -79,12 +78,11 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
   }
 
   fn emit_right_hand_side(&mut self) -> Result<()> {
-    let grey_dot = ".".white().dimmed().to_string();
     self.writer.write_all(" │ ".as_bytes())?;
     for byte in &self.line {
       match byte {
         32...126 => self.writer.write_all(&[*byte])?,
-        _ => self.writer.write_all(grey_dot.as_bytes())?,
+        _ => self.writer.write_all(".".as_bytes())?,
       };
     }
     self.line.clear();
@@ -97,10 +95,7 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
       self.writer.write_all(&[10])?; // newline
     }
 
-    let s = format!("0x{:0>8X}", self.current_line_start_index())
-      .white()
-      .dimmed()
-      .to_string();
+    let s = format!("0x{:0>8X}", self.current_line_start_index());
     self.writer.write_all(s.as_bytes())?;
     self.writer.write_all(" │".as_bytes())?;
     self.current_line += 1;
@@ -109,14 +104,15 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
   }
 
   fn emit_byte(&mut self, byte: u8) -> Result<usize> {
-    let s = self
-      .colorer
-      .color(&format!(" {:0>2X}", byte), self.previous_byte, byte);
-    let bytes = s.as_bytes();
     if self.current_line_position == 0 || self.would_overflow_current_line(3) {
       self.emit_new_line()?;
     }
-    self.writer.write_all(bytes)?;
+    self.colorer.color(
+      &mut self.writer,
+      &format!(" {:0>2X}", byte),
+      self.previous_byte,
+      byte,
+    )?;
     self.line.push(byte);
     self.current_line_position += 3;
     self.previous_byte = Some(byte);

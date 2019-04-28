@@ -1,9 +1,9 @@
 extern crate term_size;
 #[macro_use]
 extern crate clap;
-extern crate colored;
 extern crate env_logger;
 extern crate hex;
+extern crate termion;
 
 mod colorer;
 mod range_reader;
