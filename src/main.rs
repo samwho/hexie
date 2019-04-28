@@ -82,16 +82,11 @@ fn main() -> Result<()> {
   };
 
   let mut reader = RangeReader::new(BufReader::new(read), from, to);
-  let mut writer_builder = HexWriterBuilder::default();
-  if let Some(start) = from {
-    writer_builder.start_position(start);
-  }
-  let mut writer = writer_builder.build();
+  let mut writer = HexWriterBuilder::default()
+    .start_position(from.unwrap_or(0))
+    .build();
 
-  if let Err(e) = copy(&mut reader, &mut writer) {
-    return Err(e.into());
-  }
-
+  copy(&mut reader, &mut writer)?;
   Ok(())
 }
 

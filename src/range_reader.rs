@@ -20,24 +20,19 @@ impl<R: Read> RangeReader<R> {
   }
 
   fn advance(&mut self, n: usize) -> Result<usize> {
-    let iterations = n / BUF_SIZE;
     let tbuf: &mut [u8] = &mut [0; BUF_SIZE];
-    for _i in 0..iterations {
-      match self.inner.read_exact(tbuf) {
-        Ok(_) => {
-          self.pos += BUF_SIZE;
-        }
-        Err(e) => return Err(e),
-      }
+    for _i in 0..(n / BUF_SIZE) {
+      self.inner.read_exact(tbuf).and_then(|_| {
+        self.pos += BUF_SIZE;
+        Ok(())
+      })?;
     }
 
     let mut tvec = vec![0; n - self.pos];
-    match self.inner.read_exact(tvec.as_mut_slice()) {
-      Ok(_) => {
-        self.pos += tvec.len();
-      }
-      Err(e) => return Err(e),
-    };
+    self.inner.read_exact(tvec.as_mut_slice()).and_then(|_| {
+      self.pos += tvec.len();
+      Ok(())
+    })?;
 
     Ok(self.pos)
   }
@@ -54,11 +49,11 @@ impl<R: Read> Read for RangeReader<R> {
     }
 
     let n = self.inner.read(buf)?;
+    self.pos += n;
+
     if let Some(end) = self.end {
-      if self.pos + n > end {
-        let r = end - self.pos;
-        self.pos += n;
-        return Ok(r);
+      if self.pos >= end {
+        return Ok(end - (self.pos - n));
       }
     }
 

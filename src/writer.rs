@@ -10,6 +10,7 @@ pub struct HexWriter<W: Write, C: Colorer> {
   colorer: Box<C>,
   previous_byte: Option<u8>,
   line: Vec<u8>,
+  bytes_written: usize,
 }
 
 pub struct HexWriterBuilder<W: Write, C: Colorer> {
@@ -33,17 +34,17 @@ impl Default for HexWriterBuilder<Stdout, AbsoluteColorer> {
 }
 
 impl<W: Write, C: Colorer> HexWriterBuilder<W, C> {
-  pub fn writer(&mut self, writer: W) -> &mut Self {
+  pub fn writer(mut self, writer: W) -> Self {
     self.writer = Box::new(writer);
     self
   }
 
-  pub fn colorer(&mut self, colorer: C) -> &mut Self {
+  pub fn colorer(mut self, colorer: C) -> Self {
     self.colorer = Box::new(colorer);
     self
   }
 
-  pub fn start_position(&mut self, start_position: usize) -> &mut Self {
+  pub fn start_position(mut self, start_position: usize) -> Self {
     self.start_position = start_position;
     self
   }
@@ -58,6 +59,7 @@ impl<W: Write, C: Colorer> HexWriterBuilder<W, C> {
       colorer: self.colorer,
       previous_byte: None,
       line: Vec::with_capacity(self.width / 4),
+      bytes_written: 0,
     }
   }
 }
@@ -69,10 +71,6 @@ impl Default for HexWriter<Stdout, AbsoluteColorer> {
 }
 
 impl<W: Write, C: Colorer> HexWriter<W, C> {
-  fn current_line_start_index(&self) -> usize {
-    self.start_position + (self.current_line * self.width)
-  }
-
   fn would_overflow_current_line(&self, s: usize) -> bool {
     self.current_line_position + s > (self.width as f64 / 4f64).ceil() as usize * 3
   }
@@ -95,7 +93,7 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
       self.writer.write_all(&[10])?; // newline
     }
 
-    let s = format!("0x{:0>8X}", self.current_line_start_index());
+    let s = format!("0x{:0>8X}", self.start_position + self.bytes_written);
     self.writer.write_all(s.as_bytes())?;
     self.writer.write_all(" │".as_bytes())?;
     self.current_line += 1;
@@ -116,6 +114,7 @@ impl<W: Write, C: Colorer> HexWriter<W, C> {
     self.line.push(byte);
     self.current_line_position += 3;
     self.previous_byte = Some(byte);
+    self.bytes_written += 1;
     Ok(3)
   }
 }
