@@ -62,10 +62,10 @@ impl Default for Entropy {
 impl Colorer for Entropy {
   fn color(&self, writer: &mut Write, s: &str, prev: Option<u8>, cur: u8) -> Result<()> {
     let c = match prev {
-      Some(prev) => match (cur as i16 - prev as i16).abs() as u8 {
+      Some(prev) => match (i16::from(cur) - i16::from(prev)).abs() as u8 {
         0...85 => &self.color_low,
-        85...170 => &self.color_mid,
-        170...255 => &self.color_high,
+        86...170 => &self.color_mid,
+        171...255 => &self.color_high,
       },
       None => &self.color_high,
     };

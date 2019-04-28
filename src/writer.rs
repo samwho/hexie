@@ -80,7 +80,7 @@ impl HexWriter {
     for byte in &self.line {
       match byte {
         32...126 => self.writer.write_all(&[*byte])?,
-        _ => self.writer.write_all(".".as_bytes())?,
+        _ => self.writer.write_all(b".")?,
       };
     }
     self.line.clear();
@@ -128,7 +128,7 @@ impl Write for HexWriter {
   }
 
   fn flush(&mut self) -> Result<()> {
-    if self.line.len() > 0 {
+    if !self.line.is_empty() {
       loop {
         if self.would_overflow_current_line(3) {
           self.emit_right_hand_side()?;

@@ -12,7 +12,7 @@ mod writer;
 use range_reader::RangeReader;
 use std::fmt;
 use std::fs::File;
-use std::io::{copy, stdin, BufReader, Read, Write};
+use std::io::{copy, stdin, Write};
 use writer::HexWriterBuilder;
 
 #[derive(Debug)]
