@@ -10,7 +10,11 @@ pub struct RangeReader {
 }
 
 impl RangeReader {
-  pub fn from(inner: impl Seek + Read, start: Option<usize>, end: Option<usize>) -> Result<Self> {
+  pub fn from_seekable(
+    mut inner: impl Seek + Read + 'static,
+    start: Option<usize>,
+    end: Option<usize>,
+  ) -> Result<Self> {
     let s = start.unwrap_or(0);
     inner.seek(SeekFrom::Start(s as u64))?;
 
@@ -22,7 +26,11 @@ impl RangeReader {
     })
   }
 
-  pub fn new(inner: impl Read, start: Option<usize>, end: Option<usize>) -> Self {
+  pub fn from_readable(
+    inner: impl Read + 'static,
+    start: Option<usize>,
+    end: Option<usize>,
+  ) -> Self {
     RangeReader {
       inner: Box::new(inner),
       start,

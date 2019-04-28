@@ -99,12 +99,11 @@ fn main() -> Result<()> {
     end = Some(start.unwrap() + num.unwrap());
   }
 
-  let read: Box<Read> = match matches.value_of("INPUT") {
-    None => Box::new(stdin()),
-    Some(path) => Box::new(File::open(path)?),
+  let mut reader: RangeReader = match matches.value_of("INPUT") {
+    None => RangeReader::from_readable(stdin(), start, end),
+    Some(path) => RangeReader::from_seekable(File::open(path)?, start, end)?,
   };
 
-  let mut reader = RangeReader::new(BufReader::new(read), start, end);
   let mut writer = HexWriterBuilder::default()
     .start_position(start.unwrap_or(0))
     .build();
