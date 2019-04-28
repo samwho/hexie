@@ -1,19 +1,15 @@
-extern crate term_size;
-#[macro_use]
-extern crate clap;
-extern crate env_logger;
-extern crate hex;
-extern crate termion;
-
 mod colorer;
 mod range_reader;
 mod writer;
 
-use range_reader::RangeReader;
 use std::fmt;
 use std::fs::File;
 use std::io::{copy, stdin, BufReader, Read, Write};
-use writer::HexWriterBuilder;
+
+use clap::clap_app;
+
+use crate::range_reader::RangeReader;
+use crate::writer::HexWriterBuilder;
 
 #[derive(Debug)]
 enum Error {
