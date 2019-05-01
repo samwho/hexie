@@ -63,7 +63,7 @@ type Result<T> = std::result::Result<T, Error>;
 fn main() -> Result<()> {
   env_logger::init();
 
-  let matches = clap_app!(myapp =>
+  let matches = clap_app!(hexie =>
       (version: "0.1")
       (author: "Sam Rose <hello@samwho.dev>")
       (about: "Yet another hex viewer")
@@ -71,7 +71,7 @@ fn main() -> Result<()> {
       (@arg START: -s --start +takes_value "Byte to start reading from, decimal or hex")
       (@arg END: -e --end +takes_value "Byte to read to, decimal or hex")
       (@arg NUM: -n --num +takes_value "Number of bytes to read")
-      (@arg COLORER: -c --color +takes_value "Type of coloring, one of: none, absolute, entropy")
+      (@arg COLOR: -c --color +takes_value "Type of coloring, one of: none, absolute, entropy")
       (@arg NOPAGER: --nopager "Disables the pager")
   )
   .get_matches();
@@ -121,7 +121,7 @@ fn main() -> Result<()> {
 
   let mut builder = HexWriterBuilder::default().start_position(start.unwrap_or(0));
 
-  builder = match matches.value_of("COLORER") {
+  builder = match matches.value_of("COLOR") {
     Some("none") => builder.colorer(colorer::Noop::default()),
     Some("entropy") => builder.colorer(colorer::Entropy::default()),
     None | Some("absolute") => builder.colorer(colorer::Absolute::default()),
