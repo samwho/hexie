@@ -7,8 +7,8 @@ Yet another hex viewer. Does everything you would expect from a hex viewer, and 
 - Allows printing arbitrary regions of files.
 - Can be piped in to.
 - Supports two coloring modes:
-  - "absolute", which colours different byte ranges, similar to [hexyl](https://github.com/sharkdp/hexyl).
-  - "entropy", which colours bytes based on the standard deviation of neighboring bytes.
+  - "absolute", which colors different byte ranges, similar to [hexyl](https://github.com/sharkdp/hexyl).
+  - "entropy", which colors bytes based on the standard deviation of neighboring bytes.
 
 ## Usage
 
